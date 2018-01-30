@@ -2,6 +2,8 @@
 
 # Import PySide classes
 import sys
+from subprocess import call
+
 from PySide.QtCore import *
 from PySide.QtGui import *
 
@@ -11,7 +13,9 @@ class App:
     # Create a Qt application
     self.app = QApplication(sys.argv)
 
-    icon = QIcon("zcl.svg")
+    startedIcon = QIcon("zcl-started.svg")
+    stoppedIcon = QIcon("zcl-stopped.svg")
+
     menu = QMenu()
 
     startAction = menu.addAction("Start")
@@ -31,8 +35,9 @@ class App:
     exitAction.triggered.connect(sys.exit)
 
     self.tray = QSystemTrayIcon()
-    self.tray.setIcon(icon)
+    self.tray.setIcon(stoppedIcon)
     self.tray.setContextMenu(menu)
+
     self.tray.show()
 
     # TODO Alert Dialogs as needed
@@ -45,22 +50,53 @@ class App:
     sys.exit()
 
   def start(self):
-    self.dialog = QDialog()
-    self.dialog.setWindowTitle("Title - Start Dialog")
-    self.dialog.show()
+    call('./start.sh --miningArgs')
+    self.tray.setIcon(startedIcon)
+
+  def stop(self):
+    call('./stop.sh')
+    self.tray.setIcon(stoppedIcon)
 
   def configure(self):
     self.dialog = QDialog()
-    self.dialog.setWindowTitle("Title - Configure Dialog")
+    self.dialog.setWindowTitle("Configure")
+
+    poolLabel = QLabel("Pool:")
+
+    self.poolComboBox = QComboBox()
+    self.poolComboBox.addItem("None", QSystemTrayIcon.NoIcon)
+
+    self.poolComboBox.addItem(self.style().standardIcon(
+            QStyle.SP_MessageBoxInformation), "Pool1",
+            QSystemTrayIcon.Information)
+    self.poolComboBox.addItem(self.style().standardIcon(
+            QStyle.SP_MessageBoxWarning), "Pool2",
+            QSystemTrayIcon.Warning)
+    self.poolComboBox.addItem(self.style().standardIcon(
+            QStyle.SP_MessageBoxCritical), "Pool3",
+            QSystemTrayIcon.Critical)
+    self.poolComboBox.setCurrentIndex(1)
+
     self.dialog.show()
 
   def about(self):
     self.dialog = QDialog()
-    self.dialog.setWindowTitle("About - Contact & Donate Dialog")
+    self.dialog.setWindowTitle("About the Zclassic One-Click Miner")
+
+    poolLabel = QtGui.QLabel("2018 - The Zclassic Team")
+    poolLabel = QtGui.QLabel("Donate - t1Wq2HdXZ7G9uYd1HppewSoMahGBt6ZVNUD")
+
     self.dialog.show()
 
 
-
 if __name__ == "__main__":
+
+  if not QSystemTrayIcon.isSystemTrayAvailable():
+    QMessageBox.critical(None, "Systray",
+        "I couldn't detect any system tray on this system.")
+    sys.exit(1)
+
+  QApplication.setQuitOnLastWindowClosed(False)
+
   app = App()
   app.run()
