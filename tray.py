@@ -7,11 +7,16 @@ from subprocess import call
 from PySide.QtCore import *
 from PySide.QtGui import *
 
+from ConfigParser import SafeConfigParser
+
 
 class App:
   def __init__(self):
     # Create a Qt application
     self.app = QApplication(sys.argv)
+    self.app.setApplicationName("ZCL Miner")
+
+    # Closing Dialogs shouldn't kill app
     QApplication.setQuitOnLastWindowClosed(False)
 
     startedIcon = QIcon("zcl-started.svg")
@@ -27,13 +32,33 @@ class App:
     configureAction = menu.addAction("Configure")
     configureAction.triggered.connect(self.configure)
 
-    aboutAction= menu.addAction("About")
+    aboutAction = menu.addAction("About")
     aboutAction.triggered.connect(self.about)
 
     menu.addSeparator()
 
     exitAction = menu.addAction("Exit")
     exitAction.triggered.connect(sys.exit)
+
+    self.donationAddress = "t1Wq2HdXZ7G9uYd1HppewSoMahGBt6ZVNUD"
+    self.pools = ["stratum+tcp://zcl.suprnova.cc:4042", "TODO2", "TODO3"]
+
+    self.configFileName = "config.ini"
+
+    self.config = SafeConfigParser()
+
+    def createDefaultConfig():
+      if self.config.has_section('zcl') == False:
+          self.config.add_section('zcl')
+          self.config.set('zcl', 'pool', 'stratum+tcp://zcl.suprnova.cc:4042')
+          self.config.set('zcl', 'autostart', 'false')
+          self.config.set('zcl', 'address', self.donationAddress)
+
+          with open(self.configFileName, 'w') as cfg:
+              self.config.write(cfg)
+
+    if self.config.read(self.configFileName) != self.configFileName:
+      createDefaultConfig()
 
     self.tray = QSystemTrayIcon()
     self.tray.setIcon(stoppedIcon)
@@ -44,21 +69,33 @@ class App:
     # TODO Alert Dialogs as needed
     #self.tray.showMessage("traymessage1_1", "traymessage1_2")
 
+
   def run(self):
     # Enter Qt application main loop
     self.app.exec_()
     sys.exit()
 
+  # Start the Miner
   def start(self):
-    call('./start.sh --miningArgs')
 
-    #self.tray.showMessage("started", "mining")
+    params = (self.config.get('zcl', 'pool', self.pools[0]), self.config.get('zcl', 'address', self.donationAddress), 'x', '30', 'equihash200_9', '') # '-i 5'
+
+    cmd = "./optiminer-equihash-2.1.2/optiminer-equihash -s %s -u %s -p %s --watchdog-timeout %s -a %s --watchdog-cmd './watchdog-cmd.sh' %s"
+
+    call('export GPU_FORCE_64BIT_PTR=1') # Performance
+    call(cmd)
+
+    #self.tray.showMessage("started", "started mining")
     self.tray.setIcon(startedIcon)
 
+  # Stop the Miner
   def stop(self):
-    call('./stop.sh')
 
-    #self.tray.showMessage("stopped", "mining")
+    cmd = "killall optiminer-equihash"
+
+    call(cmd)
+
+    #self.tray.showMessage("stopped", "stopped mining")
     self.tray.setIcon(stoppedIcon)
 
   def configure(self):
@@ -68,28 +105,41 @@ class App:
     poolLabel = QLabel("Pool:")
 
     self.poolComboBox = QComboBox()
-    self.poolComboBox.addItem("None", QSystemTrayIcon.NoIcon)
-    self.poolComboBox.addItem("Pool 1")
-    self.poolComboBox.addItem("Pool 2")
-    self.poolComboBox.addItem("Pool 3")
-    
-    self.poolComboBox.setCurrentIndex(1)
+    for p in self.pools:
+        self.poolComboBox.addItem(p)
+    self.poolComboBox.setCurrentIndex(0) #TODO
 
     startOnOpenLabel = QLabel("Start Mining on Open?")
-    startOnOpenCheckBox = QCheckBox()
+    self.startOnOpenCheckBox = QCheckBox()
+    self.startOnOpenCheckBox.setChecked(self.config.get("zcl", "autostart", "false") == "True")
 
     addressLabel = QLabel("Your Address:")
-    addressTextEdit = QTextEdit()
+    self.addressLineEdit = QLineEdit()
+    self.addressLineEdit.setText(self.config.get("zcl", "address", self.donationAddress))
+    #TODO self.addressLineEdit.setValidator(QStringValidator(...))
 
+    def onOK():
+        self.config.set('zcl', 'pool', self.pools[self.poolComboBox.currentIndex()])
+        self.config.set('zcl', 'autostart', str(self.startOnOpenCheckBox.isChecked()))
+        self.config.set('zcl', 'address', self.addressLineEdit.text())
+
+        with open(self.configFileName, 'w') as cfg:
+            self.config.write(cfg)
+
+        self.dialog.close()
+
+    saveButton = QPushButton("OK")
+    saveButton.clicked.connect(onOK)
 
     # Create layout and add widgets
     layout = QVBoxLayout()
     layout.addWidget(poolLabel)
     layout.addWidget(self.poolComboBox)
     layout.addWidget(startOnOpenLabel)
-    layout.addWidget(startOnOpenCheckBox)
+    layout.addWidget(self.startOnOpenCheckBox)
     layout.addWidget(addressLabel)
-    layout.addWidget(addressTextEdit)
+    layout.addWidget(self.addressLineEdit)
+    layout.addWidget(saveButton)
 
     self.dialog.setLayout(layout)
 
@@ -100,9 +150,9 @@ class App:
     self.dialog.setWindowTitle("About")
 
     teamLabel = QLabel("Zclassic One-Click Miner (Equihash)")
-    donateLabel = QLabel("Donate:  t1Wq2HdXZ7G9uYd1HppewSoMahGBt6ZVNUD")
+    donateLabel = QLabel("Donate: %s" % self.donationAddress)
 
-    feeLabel = QLabel("The Optiminer used by this software takes a 1% dev fee. Read more: https://github.com/Optiminer/OptiminerEquihash")
+    feeLabel = QLabel("The Optiminer used by this software takes a 1%% dev fee. Read more: https://github.com/Optiminer/OptiminerEquihash")
 
     # Create layout and add widgets
     layout = QVBoxLayout()
@@ -117,7 +167,7 @@ class App:
 if __name__ == "__main__":
 
   if not QSystemTrayIcon.isSystemTrayAvailable():
-    QMessageBox.critical(None, "Systray",
+    QMessageBox.critical(None, "Error - System Tray",
         "Couldn't detect a system tray on this computer...")
     sys.exit(1)
 
