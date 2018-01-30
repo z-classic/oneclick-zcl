@@ -62,36 +62,41 @@ class App:
     self.tray.setIcon(stoppedIcon)
 
   def configure(self):
-    self.dialog = QDialog()
+    self.dialog = QDialog(None, Qt.WindowStaysOnTopHint)
     self.dialog.setWindowTitle("Configure")
 
     poolLabel = QLabel("Pool:")
 
     self.poolComboBox = QComboBox()
     self.poolComboBox.addItem("None", QSystemTrayIcon.NoIcon)
-
-    self.poolComboBox.addItem("Pool1")
-    self.poolComboBox.addItem("Pool2")
-    self.poolComboBox.addItem("Pool3")
+    self.poolComboBox.addItem("Pool 1")
+    self.poolComboBox.addItem("Pool 2")
+    self.poolComboBox.addItem("Pool 3")
     
-    #TODO Icons?
-    # self.poolComboBox.addItem(self.style().standardIcon(
-    #        QStyle.SP_MessageBoxCritical), "Pool3",
-    #        QSystemTrayIcon.Critical)
-
     self.poolComboBox.setCurrentIndex(1)
+
+    startOnOpenLabel = QLabel("Start Mining on Open?")
+    startOnOpenCheckBox = QCheckBox()
+
+    addressLabel = QLabel("Your Address:")
+    addressTextEdit = QTextEdit()
+
 
     # Create layout and add widgets
     layout = QVBoxLayout()
     layout.addWidget(poolLabel)
     layout.addWidget(self.poolComboBox)
+    layout.addWidget(startOnOpenLabel)
+    layout.addWidget(startOnOpenCheckBox)
+    layout.addWidget(addressLabel)
+    layout.addWidget(addressTextEdit)
 
     self.dialog.setLayout(layout)
 
     self.dialog.show()
 
   def about(self):
-    self.dialog = QDialog()
+    self.dialog = QDialog(None, Qt.WindowStaysOnTopHint)
     self.dialog.setWindowTitle("About")
 
     teamLabel = QLabel("Zclassic One-Click Miner (Equihash)")
