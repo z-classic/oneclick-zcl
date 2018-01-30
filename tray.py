@@ -12,6 +12,7 @@ class App:
   def __init__(self):
     # Create a Qt application
     self.app = QApplication(sys.argv)
+    QApplication.setQuitOnLastWindowClosed(False)
 
     startedIcon = QIcon("zcl-started.svg")
     stoppedIcon = QIcon("zcl-stopped.svg")
@@ -42,7 +43,6 @@ class App:
 
     # TODO Alert Dialogs as needed
     #self.tray.showMessage("traymessage1_1", "traymessage1_2")
-    #self.tray.showMessage("traymessage2_1", "traymessage2_2")
 
   def run(self):
     # Enter Qt application main loop
@@ -51,10 +51,14 @@ class App:
 
   def start(self):
     call('./start.sh --miningArgs')
+
+    #self.tray.showMessage("started", "mining")
     self.tray.setIcon(startedIcon)
 
   def stop(self):
     call('./stop.sh')
+
+    #self.tray.showMessage("stopped", "mining")
     self.tray.setIcon(stoppedIcon)
 
   def configure(self):
@@ -66,25 +70,41 @@ class App:
     self.poolComboBox = QComboBox()
     self.poolComboBox.addItem("None", QSystemTrayIcon.NoIcon)
 
-    self.poolComboBox.addItem(self.style().standardIcon(
-            QStyle.SP_MessageBoxInformation), "Pool1",
-            QSystemTrayIcon.Information)
-    self.poolComboBox.addItem(self.style().standardIcon(
-            QStyle.SP_MessageBoxWarning), "Pool2",
-            QSystemTrayIcon.Warning)
-    self.poolComboBox.addItem(self.style().standardIcon(
-            QStyle.SP_MessageBoxCritical), "Pool3",
-            QSystemTrayIcon.Critical)
+    self.poolComboBox.addItem("Pool1")
+    self.poolComboBox.addItem("Pool2")
+    self.poolComboBox.addItem("Pool3")
+    
+    #TODO Icons?
+    # self.poolComboBox.addItem(self.style().standardIcon(
+    #        QStyle.SP_MessageBoxCritical), "Pool3",
+    #        QSystemTrayIcon.Critical)
+
     self.poolComboBox.setCurrentIndex(1)
+
+    # Create layout and add widgets
+    layout = QVBoxLayout()
+    layout.addWidget(poolLabel)
+    layout.addWidget(self.poolComboBox)
+
+    self.dialog.setLayout(layout)
 
     self.dialog.show()
 
   def about(self):
     self.dialog = QDialog()
-    self.dialog.setWindowTitle("About the Zclassic One-Click Miner")
+    self.dialog.setWindowTitle("About")
 
-    poolLabel = QtGui.QLabel("2018 - The Zclassic Team")
-    poolLabel = QtGui.QLabel("Donate - t1Wq2HdXZ7G9uYd1HppewSoMahGBt6ZVNUD")
+    teamLabel = QLabel("Zclassic One-Click Miner (Equihash)")
+    donateLabel = QLabel("Donate:  t1Wq2HdXZ7G9uYd1HppewSoMahGBt6ZVNUD")
+
+    feeLabel = QLabel("The Optiminer used by this software takes a 1% dev fee. Read more: https://github.com/Optiminer/OptiminerEquihash")
+
+    # Create layout and add widgets
+    layout = QVBoxLayout()
+    layout.addWidget(teamLabel)
+    layout.addWidget(donateLabel)
+
+    self.dialog.setLayout(layout)
 
     self.dialog.show()
 
@@ -93,10 +113,9 @@ if __name__ == "__main__":
 
   if not QSystemTrayIcon.isSystemTrayAvailable():
     QMessageBox.critical(None, "Systray",
-        "I couldn't detect any system tray on this system.")
+        "Couldn't detect a system tray on this computer...")
     sys.exit(1)
 
-  QApplication.setQuitOnLastWindowClosed(False)
 
   app = App()
   app.run()
