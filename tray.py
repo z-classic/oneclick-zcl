@@ -41,7 +41,7 @@ class App:
     exitAction.triggered.connect(sys.exit)
 
     self.donationAddress = "t1Wq2HdXZ7G9uYd1HppewSoMahGBt6ZVNUD"
-    self.pools = ["stratum+tcp://zcl.suprnova.cc:4042", "TODO2", "TODO3"]
+    self.pools = ["stratum+tcp://zcl.suprnova.cc:4042", "stratum+tcp://zcl.suprnova.cc:4042", "X"]
 
     self.configFileName = "config.ini"
 
@@ -80,9 +80,7 @@ class App:
 
     params = (self.config.get('zcl', 'pool', self.pools[0]), self.config.get('zcl', 'address', self.donationAddress), 'x', '30', 'equihash200_9', '') # '-i 5'
 
-    cmd = "./optiminer-equihash-2.1.2/optiminer-equihash -s %s -u %s -p %s --watchdog-timeout %s -a %s --watchdog-cmd './watchdog-cmd.sh' %s"
-
-    call('export GPU_FORCE_64BIT_PTR=1') # Performance
+    cmd = "GPU_FORCE_64BIT_PTR=1 ./optiminer-equihash-2.1.2/optiminer-equihash -s %s -u %s -p %s --watchdog-timeout %s -a %s --watchdog-cmd './watchdog-cmd.sh' %s"
     call(cmd)
 
     #self.tray.showMessage("started", "started mining")
