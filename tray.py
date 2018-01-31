@@ -2,7 +2,7 @@
 
 # Import PySide classes
 import sys
-from subprocess import call
+import subprocess 
 
 from PySide.QtCore import *
 from PySide.QtGui import *
@@ -19,8 +19,8 @@ class App:
     # Closing Dialogs shouldn't kill app
     QApplication.setQuitOnLastWindowClosed(False)
 
-    startedIcon = QIcon("zcl-started.svg")
-    stoppedIcon = QIcon("zcl-stopped.svg")
+    self.startedIcon = QIcon("zcl-started.svg")
+    self.stoppedIcon = QIcon("zcl-stopped.svg")
 
     menu = QMenu()
 
@@ -61,7 +61,7 @@ class App:
       createDefaultConfig()
 
     self.tray = QSystemTrayIcon()
-    self.tray.setIcon(stoppedIcon)
+    self.tray.setIcon(self.stoppedIcon)
     self.tray.setContextMenu(menu)
 
     self.tray.show()
@@ -81,20 +81,22 @@ class App:
     params = (self.config.get('zcl', 'pool', self.pools[0]), self.config.get('zcl', 'address', self.donationAddress), 'x', '30', 'equihash200_9', '') # '-i 5'
 
     cmd = "GPU_FORCE_64BIT_PTR=1 ./optiminer-equihash-2.1.2/optiminer-equihash -s %s -u %s -p %s --watchdog-timeout %s -a %s --watchdog-cmd './watchdog-cmd.sh' %s"
-    call(cmd)
+    cmdToRun = cmd % params
+
+    subprocess.call(cmdToRun, shell=True)
 
     #self.tray.showMessage("started", "started mining")
-    self.tray.setIcon(startedIcon)
+    self.tray.setIcon(self.startedIcon)
 
   # Stop the Miner
   def stop(self):
 
     cmd = "killall optiminer-equihash"
 
-    call(cmd)
+    subprocess.call(cmd, shell=True)
 
     #self.tray.showMessage("stopped", "stopped mining")
-    self.tray.setIcon(stoppedIcon)
+    self.tray.setIcon(self.stoppedIcon)
 
   def configure(self):
     self.dialog = QDialog(None, Qt.WindowStaysOnTopHint)
