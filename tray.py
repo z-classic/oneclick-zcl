@@ -41,7 +41,7 @@ class App:
     exitAction.triggered.connect(sys.exit)
 
     self.donationAddress = "t1Wq2HdXZ7G9uYd1HppewSoMahGBt6ZVNUD"
-    self.pools = ["stratum+tcp://zcl.suprnova.cc:4042", "stratum+tcp://zcl.suprnova.cc:4042", "X"]
+    self.pools = ["stratum+tcp://zcl.suprnova.cc:4042", "X", "Y"]
 
     self.configFileName = "config.ini"
 
@@ -107,7 +107,7 @@ class App:
     self.poolComboBox = QComboBox()
     for p in self.pools:
         self.poolComboBox.addItem(p)
-    self.poolComboBox.setCurrentIndex(0) #TODO
+    self.poolComboBox.setCurrentIndex(self.pools.index(self.config.get("zcl", "pool", self.pools[0])))
 
     startOnOpenLabel = QLabel("Start Mining on Open?")
     self.startOnOpenCheckBox = QCheckBox()
